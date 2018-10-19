@@ -1,0 +1,53 @@
+---
+# tasks file for SSH_TO_LINUX
+
+- include_tasks: "{{start_mail}}"
+- block:
+  - name: Get the status of the Netstat log file
+    stat: 
+      path: "{{ log_file_path }}"
+    register: net_path
+
+  - name: Delete the file if already exists for Netstat logs 
+    file:
+     path: "{{ log_file_path }}"
+     state: absent
+    delegate_to: localhost
+    when: net_path.stat.exists == True
+
+  - name: Execute the Netstat command
+    command: netstat -ntep 
+    register: netstat_out
+
+  - name: Print the output of the Netstat command
+    debug:
+      msg: "{{ netstat_out.stdout }} "
+
+  - name: Create a file for logs of Netstat
+    file:
+     path: "{{ log_file_path }}"
+     state: touch
+    delegate_to: localhost
+   
+  - name: Save the output to the created Netstat log file
+    lineinfile:
+      path: "{{ log_file_path }}"
+      line:  "{{ hostvars[inventory_hostname]['inventory_hostname'] }} {{  netstat_out.stdout }}"
+
+    delegate_to: localhost
+
+  - name: Sending the success mail
+    include_tasks: "{{success_mail}}"
+    when: netstat_out is success
+
+  rescue:
+   - debug: 
+       msg: "The failed task was :  {{ ansible_failed_task.name }} for the role called   {{ role_name }}  of hostname  {{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+     register: output
+
+   - name: setting the facts
+     set_fact:
+        failmsg: "{{ output }}"
+
+   - name: Task failed
+     include_tasks: "{{failure_mail}}"

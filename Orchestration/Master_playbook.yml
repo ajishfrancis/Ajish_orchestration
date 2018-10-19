@@ -1,0 +1,10 @@
+---
+ - hosts: all
+   gather_facts: true
+ - name: Include the Linux slave playbook
+   import_playbook: Linux_submaster_playbook.yml
+   when: ansible_os_family == "RedHat" or ansible_os_family == "Suse"
+
+ - name: Include the Windows slave playbook
+   import_playbook: Windows_submaster_playbook.yml
+   when: ansible_os_family == "Windows"

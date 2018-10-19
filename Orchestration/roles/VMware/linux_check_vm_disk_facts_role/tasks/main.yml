@@ -1,0 +1,38 @@
+---
+
+- include_tasks: "{{start_mail}}"
+- block:
+    - name: Find the disk present in Linux
+      shell: lsblk -o NAME,MODEL | awk '/Virtual disk/{print $1}' | awk 'END{print NR}'
+      register: linux_vm_disk_facts
+ 
+    - name: Compare the vmdks and drives present in VCenter and OS respectively
+      debug: msg="The result of comparison for {{ hostvars[inventory_hostname]['inventory_hostname'] }} is TRUE with drives and vmdks as {{linux_vm_disk_facts.stdout}} and {{vcenter_disk_facts.guest_disk_facts["No_of_Disk_present"]}} respectively"
+
+      when: vcenter_disk_facts.guest_disk_facts["No_of_Disk_present"] == linux_vm_disk_facts.stdout|int    
+      register: result
+
+    - name: Sending the success mail
+      include_tasks: "{{success_mail}}"
+      when: result is success
+
+    - name: Setting the facts
+      set_fact:
+        failmsg: "{{ result }}"
+      when: result is skipped
+
+    - name: Task failed
+      include_tasks: "{{failure_mail}}"
+      when: result is skipped
+
+  rescue:
+   - debug: 
+       msg: "The failed task was :  {{ ansible_failed_task.name }} for the role called   {{ role_name }}  of hostname  {{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+     register: output
+
+   - name: setting the facts
+     set_fact:
+        failmsg: "{{ output }}"
+
+   - name: Task failed
+     include_tasks: "{{failure_mail}}"

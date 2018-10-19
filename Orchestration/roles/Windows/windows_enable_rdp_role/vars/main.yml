@@ -1,0 +1,5 @@
+---
+
+path:  HKLM:\SYSTEM\CurrentControlSet\Control\Terminal server
+data: 1
+disable_value: 0

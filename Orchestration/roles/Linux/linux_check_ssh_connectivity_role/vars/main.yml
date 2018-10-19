@@ -1,0 +1,6 @@
+---
+# vars file for SSH_TO_LINUX
+
+# The Ansible_Automation directory should be created or present under the home directory to save the logs
+
+log_file_path: /home/Orchestration/logs/Netstat_output_for_Linux

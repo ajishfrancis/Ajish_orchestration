@@ -1,0 +1,35 @@
+---
+- include_tasks: "{{start_mail}}"
+- block:
+    - name: Check the VMware Software Installation in Windows
+      win_shell: |
+          $software = "VMware Tools";
+          $installed = Get-WmiObject -Class Win32_Product | sort-object Name | select Name | where {$_.Name -match $software}
+          If(-Not $installed) 
+          {
+            Write-Host "'$software' is not installed.";
+          } 
+          else 
+          {
+            Write-Host "'$software' is installed."
+          }
+
+      register: result
+
+    - name: Sending the success mail
+      include_tasks: "{{success_mail}}"
+      when: result is changed
+
+
+  rescue:
+   - debug: 
+       msg: "The failed task was :  {{ ansible_failed_task.name }} for the role called   {{ role_name }}  of hostname  {{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+     register: output
+
+   - name: setting the facts
+     set_fact:
+        failmsg: "{{ output }}"
+
+   - name: Task failed
+     include_tasks: "{{failure_mail}}"
+

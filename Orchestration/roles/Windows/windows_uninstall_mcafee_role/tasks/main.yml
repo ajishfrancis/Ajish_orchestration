@@ -1,0 +1,69 @@
+---
+# tasks file for McAfeeUninstall
+
+- include_tasks: "{{start_mail}}"
+- block:
+    - name: Get the path of the MCafee installation
+      win_stat: path="{{directory_remove_path}}"
+      register: filestat
+
+    - name: Remove McAfee Virus scan
+      win_package:
+          product_id: "{{mcafee_product_id}}"
+          state: absent
+      when: filestat.stat.exists == True
+      register: virusscan_removal_info
+
+    - debug: msg="{{virusscan_removal_info}}"
+      tags:
+        - virusscan_removed
+
+    - name: Remove MCafee Virus Agent
+      win_command: .\FrmInst.exe /forceuninstall
+      args:
+        chdir: "{{installation_directory}}"
+      when: filestat.stat.exists == True
+      register: agent_removal_info
+
+    - debug: msg="{{agent_removal_info}}"
+      tags:
+        - virusagent_removed
+
+    - name: Remove Registry Keys for Mcaffe
+      win_regedit:
+            path: "{{registry_path}}"
+            state: absent
+      tags:
+        - registry_removed
+      when: filestat.stat.exists == True
+
+    - name: Remove MCaffe Folder from Program Files
+      win_file:
+         path: "{{directory_remove_path}}"
+         state: absent
+      when: filestat.stat.exists == True
+      tags:
+        - folder_removed
+      
+    - name: Sending the success mail
+      include_tasks: "{{success_mail}}"
+      when: agent_removal_info is success
+
+    - name: Reboot after MCaffe Uninstallation
+      win_reboot:
+      tags:
+        - reboot
+      when: filestat.stat.exists == True
+
+  rescue:
+   - debug: 
+       msg: "The failed task was :  {{ ansible_failed_task.name }} for the role called   {{ role_name }}  of hostname  {{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+     register: output
+
+   - name: setting the facts
+     set_fact:
+        failmsg: "{{ output }}"
+
+   - name: Task failed
+     include_tasks: "{{failure_mail}}"
+   

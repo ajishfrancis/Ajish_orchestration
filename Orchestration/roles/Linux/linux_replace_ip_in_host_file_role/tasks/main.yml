@@ -1,0 +1,53 @@
+---
+# tasks file for Host_File_Correction
+
+- include_tasks: "{{start_mail}}"
+- block:
+  - name: Check whether /etc/hosts contains "{{Old_IP_FQDN}}"
+    command: grep -Fxq "{{Old_IP_FQDN}}" "{{Host_file_path}}"
+    register: checkmyconf
+    ignore_errors: false
+    changed_when: no
+
+  - name: Replace the Ip address in /etc/hosts
+    lineinfile:
+      path: "{{ Host_file_path }}"
+      regexp: "^{{ Old_IP_FQDN }}"
+      line: "{{ New_IP_FQDN }}"
+      backrefs: yes
+      state: present
+    when: checkmyconf.rc == 0
+    register: result
+
+  - name: Sending the success mail
+    include_tasks: "{{success_mail}}"
+    when: result is changed
+
+  - name: Replacing the IP address failed. Check the /etc/hosts file
+    debug: 
+       msg: "Replacing the IP address failed"
+    when: result is failed
+    register: ip_fail
+
+  - name: Setting the facts
+    set_fact:
+      failmsg: "{{ ip_fail }}"
+    when: ip_fail is success
+
+  - name: Task failed
+    include_tasks: "{{failure_mail}}"
+    when: ip_fail is success
+
+  rescue:
+   - debug: 
+       msg: "The failed task was :  {{ ansible_failed_task.name }} for hostname  {{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+     when: checkmyconf.rc != 0
+     register: output
+
+   - name: setting the facts
+     set_fact:
+        failmsg: "{{ output }}"
+
+   - name: Task failed
+     include_tasks: "{{failure_mail}}"
+   

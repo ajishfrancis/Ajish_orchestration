@@ -1,0 +1,21 @@
+---
+ - hosts: all
+   become: true
+#   strategy: free
+   vars:
+     start_mail: /home/Orchestration/mail/start_mail.yml
+     success_mail: /home/Orchestration/mail/success_mail.yml
+     failure_mail: /home/Orchestration/mail/failure_mail.yml
+   roles:
+   - Linux/linux_check_credentials_role
+   - Linux/linux_check_ssh_connectivity_role
+   - Linux/linux_check_system_volume_role 
+   - Linux/linux_set_timezone_role
+   - Linux/generic_remove_platespin_files_role
+   - Linux/linux_replace_ip_in_host_file_role 
+   - VMware/generic_check_for_seperate_vmdk_role
+   - VMware/linux_check_vm_disk_facts_role 
+   - VMware/vmware_vm_remove_cdrom_role
+   - VMware/vmware_vm_enable_cpu_mem_hot_add_role
+   - VMware/vmware_vm_change_hardware_level_role
+     

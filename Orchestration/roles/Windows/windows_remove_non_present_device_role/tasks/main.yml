@@ -1,0 +1,71 @@
+---
+# Removal of the non present devices from Windows
+
+- include_tasks: "{{start_mail}}"
+- block:
+    - name: Check whether the devcon utility is already present in Windows
+      win_stat:
+       path: "{{devcon_dir}}"
+      register: devcon_status
+
+    - name: Create a directory to store the devcon utility and other files
+      win_file:
+       path: "{{devcon_dir}}"
+       state: directory
+      when: devcon_status.stat.exists == False
+
+    - name: Copy the Devcon with other files to Windows
+      win_copy:
+        src: "{{devcon_exe_dir}}/{{item}}"
+        dest: "{{devcon_dir}}"
+      with_items:
+       - devcon.exe
+       - devcon64.exe
+       - RemoveNonPresentDevices.vbs
+
+    - name: Get the status of the log file
+      stat:
+       path: "{{log_path}}"
+      register: script_path
+      delegate_to: localhost
+
+    - name: Delete the file if already exists for Non_Present_device logs
+      file:
+       path: "{{log_path}}"
+       state: absent
+      delegate_to: localhost
+      when: script_path.stat.exists == True
+
+    - name: Remove the non-present device by running the script
+      win_shell: cscript RemoveNonPresentDevices.vbs
+      args:
+       chdir: "{{devcon_dir}}"
+      register: script_output
+
+    - name: Sending the success mail
+      include_tasks: "{{success_mail}}"
+      when: script_output is changed
+
+    - name: Create a file for logs of Non_Present_device
+      file:
+       path: "{{log_path}}"
+       state: touch
+      delegate_to: localhost
+
+    - name: Save the output to the created file
+      lineinfile:
+       path: "{{log_path}}"
+       line:  "{{ hostvars[inventory_hostname]['inventory_hostname'] }} \n {{  script_output.stdout }}"
+      delegate_to: localhost
+    
+  rescue:
+   - debug: 
+       msg: "The failed task was :  {{ ansible_failed_task.name }} for the role called   {{ role_name }}  of hostname  {{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+     register: output
+
+   - name: setting the facts
+     set_fact:
+        failmsg: "{{ output }}"
+
+   - name: Task failed
+     include_tasks: "{{failure_mail}}"

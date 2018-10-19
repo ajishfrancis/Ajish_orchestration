@@ -1,0 +1,8 @@
+---
+#    - name: Find the disk present in Linux
+    - shell: lsblk -o NAME,MODEL | awk '/Virtual disk/{print $1}' | awk 'END{print NR}'
+      delegate_to: "{{ item }}"
+      with_items: '{{groups["linux"]}}'
+      register: linux_vm_disk_facts
+
+

@@ -1,0 +1,57 @@
+---
+# tasks file for LinuxPartition
+
+- include_tasks: "{{start_mail}}"
+- block:
+
+    - name: Show all Partitions of the Linux Server
+      shell: parted -l
+      register: all_partition
+    - debug: msg="{{all_partition}}"
+
+    - name: Getting total volume size of the Linux Server
+      shell: parted -l | head -2 |sed '1d' | cut -d ":" -f2
+      register: volume_size
+    - debug: msg="{{volume_size.stdout}}"
+   
+    - name: Setting facts
+      set_fact:
+        servervolume: "{{volume_size.stdout}}"
+        requiredvolume: "{{disksize_required}}"
+
+    - name: Results for Volume partition
+      debug: 
+         msg: "Volume Criteria Matched"
+      when: servervolume >= requiredvolume
+      register: result
+
+    - name: Sending the success mail
+      include_tasks: "{{success_mail}}"
+      when: result is changed
+
+    - name: Results for Volume Partition
+      debug: 
+         msg: "Volume Criteria not matched"
+      when: servervolume < requiredvolume and result is skipped
+      register: not_match
+
+    - name: Setting the facts
+      set_fact:
+        failmsg: "{{ not_match }}"
+      when: not_match is success
+
+    - name: Task failed
+      include_tasks: "{{failure_mail}}"
+      when: not_match is success
+
+  rescue:
+   - debug: 
+       msg: "The failed task was :  {{ ansible_failed_task.name }} for the role called   {{ role_name }}  of hostname  {{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+     register: output
+
+   - name: setting the facts
+     set_fact:
+        failmsg: "{{ output }}"
+
+   - name: Task failed
+     include_tasks: "{{failure_mail}}"

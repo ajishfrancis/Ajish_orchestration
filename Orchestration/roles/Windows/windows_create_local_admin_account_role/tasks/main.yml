@@ -1,0 +1,48 @@
+---
+
+- include_tasks: "{{start_mail}}"
+
+- block:
+    - name: Ensure user "{{win_admin_username}}" is present in Windows
+      win_user:
+          name: "{{win_admin_username}}"
+          state: query
+          groups:
+             - Users
+      register: userinfo
+
+    - name: Sending the success mail
+      include_tasks: "{{success_mail}}"
+      when: userinfo is success
+
+    - name: Setting facts
+      set_fact:
+           Userstate: "{{userinfo.state}}"
+        
+
+    - name: If User Administror does not exist, create it
+      win_user:
+         name: "{{win_admin_username}}"
+         password: "{{win_admin_password}}"
+         state: present
+         groups:
+            - Users
+      when: Userstate == "absent"
+      register: result
+
+    - name: Sending the success mail
+      include_tasks: "{{success_mail}}"
+      when: result is changed
+           
+  rescue:
+   - debug: 
+       msg: "The failed task was :  {{ ansible_failed_task.name }} for the role called   {{ role_name }}  of hostname  {{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+     register: output
+
+   - name: setting the facts
+     set_fact:
+        failmsg: "{{ output }}"
+
+   - name: Task failed
+     include_tasks: "{{failure_mail}}"
+

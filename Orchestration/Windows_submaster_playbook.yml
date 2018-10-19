@@ -1,0 +1,27 @@
+---
+ - hosts: all
+  # strategy: free
+   vars:
+     start_mail: /home/Orchestration/mail/start_mail.yml
+     success_mail: /home/Orchestration/mail/success_mail.yml
+     failure_mail: /home/Orchestration/mail/failure_mail.yml
+   roles:
+   - Windows/windows_check_credentials_role
+   - Windows/windows_disable_uac_role
+   - Windows/windows_create_local_admin_account_role
+   - Windows/windows_vmware_tools_installation_role
+   - Windows/windows_install_netfx3_role
+   - Windows/windows_set_dns_suffix_nic_role
+   - Windows/windows_set_timezone_role
+   - Windows/windows_check_system_volume_role
+   - Windows/windows_enable_rdp_role
+   - Windows/windows_set_fixed_pagefile_role
+   - Windows/windows_disable_windows_update_role
+   - Windows/windows_uninstall_mcafee_role
+   - Windows/windows_uninstall_netfx3_role
+   - Windows/windows_remove_non_present_device_role
+   - VMware/generic_check_for_seperate_vmdk_role
+   - VMware/windows_check_vm_disk_facts_role
+   - VMware/vmware_vm_remove_cdrom_role
+   - VMware/vmware_vm_enable_cpu_mem_hot_add_role
+   - VMware/vmware_vm_change_hardware_level_role

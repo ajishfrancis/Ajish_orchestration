@@ -1,0 +1,15 @@
+---
+# vars file for McAfeeUninstall
+
+
+#INSTALLATION DIRECTORY PATH OF McAfee AGENT
+installation_directory: 'C:\Program Files (x86)\McAfee\Common Framework\'
+
+#DIRECTORY PATH
+directory_path: 'C:\Program Files (x86)\'
+
+#REGISTRY PATH
+registry_path: HKLM:\SOFTWARE\Wow6432Node\McAfee
+
+#DIRECTORY REMOVE PATH
+directory_remove_path: 'C:\Program Files (x86)\McAfee\'

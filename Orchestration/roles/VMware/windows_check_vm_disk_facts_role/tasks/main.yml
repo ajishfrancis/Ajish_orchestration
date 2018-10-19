@@ -1,0 +1,40 @@
+---
+
+
+- include_tasks: "{{start_mail}}"
+- block:
+    - name: Find the number of drives present in Windows
+      win_shell: gwmi Win32_DiskDrive | measure | Select Count | ft -AutoSize -HideTableHeaders
+      register: windows_vm_disk_facts
+      when: ansible_os_family == "Windows"
+
+    - name: Compare the vmdks and drives present in VCenter and OS respectively
+      debug: msg="The result of comparison for {{ hostvars[inventory_hostname]['inventory_hostname'] }} is TRUE with drives and vmdks as {{windows_vm_disk_facts.stdout | trim}} and {{vcenter_disk_facts.guest_disk_facts["No_of_Disk_present"]}} respectively"
+
+      when: ansible_os_family == "Windows" and vcenter_disk_facts.guest_disk_facts["No_of_Disk_present"] == windows_vm_disk_facts.stdout|int
+      register: result
+
+    - name: Sending the success mail
+      include_tasks: "{{success_mail}}"
+      when: result is success
+
+    - name: Setting the facts
+      set_fact:
+        failmsg: "{{ result }}"
+      when: result is skipped
+
+    - name: Task failed
+      include_tasks: "{{failure_mail}}"
+      when: result is skipped
+
+  rescue:
+   - debug: 
+       msg: "The failed task was :  {{ ansible_failed_task.name }} for the role called   {{ role_name }}  of hostname  {{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+     register: output
+
+   - name: setting the facts
+     set_fact:
+        failmsg: "{{ output }}"
+
+   - name: Task failed
+     include_tasks: "{{failure_mail}}"

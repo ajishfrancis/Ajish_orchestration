@@ -1,0 +1,56 @@
+---
+
+- include_tasks: "{{start_mail}}"
+  when: hostvars[inventory_hostname]['inventory_hostname'] ==  vmname and change_hw_version == 'yes'
+
+- block:
+    - name: Power off the Vm if in On state.
+      vmware_guest:
+       hostname: "{{vcenter_hostname}}"
+       username: "{{vcenter_username}}"
+       password: "{{vcenter_password}}"
+       name: "{{vm_name}}"
+       validate_certs: no
+       state: "{{vmstate_off}}"
+      delegate_to: localhost
+      when: hostvars[inventory_hostname]['inventory_hostname'] ==  vmname and change_hw_version == 'yes'
+
+    - name: Change the Hardware version to "{{version_required}}"
+      sonam_version:
+       hostname: "{{vcenter_hostname}}"
+       username: "{{vcenter_username}}"
+       password: "{{vcenter_password}}"
+       name: "{{vm_name}}"
+       validate_certs: no
+       hardware:
+         version: "{{version_required}}"  
+      register: result
+      delegate_to: localhost 
+      when: hostvars[inventory_hostname]['inventory_hostname'] ==  vmname and change_hw_version == 'yes'
+
+    - name: Power on the vm      
+      vmware_guest:
+       hostname: "{{vcenter_hostname}}"
+       username: "{{vcenter_username}}"
+       password: "{{vcenter_password}}"
+       name: "{{vm_name}}"
+       validate_certs: no
+       state: "{{vmstate_on}}"
+      when: hostvars[inventory_hostname]['inventory_hostname'] ==  vmname and change_hw_version == 'yes'
+      delegate_to: localhost
+
+    - name: Sending the success mail
+      include_tasks: "{{success_mail}}"
+      when: hostvars[inventory_hostname]['inventory_hostname'] ==  vmname and change_hw_version == 'yes' and result is success
+
+  rescue:
+   - debug: 
+       msg: "The failed task was :  {{ ansible_failed_task.name }} for the role called   {{ role_name }}  of hostname  {{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+     register: output
+
+   - name: setting the facts
+     set_fact:
+        failmsg: "{{ output }}"
+
+   - name: Task failed
+     include_tasks: "{{failure_mail}}"

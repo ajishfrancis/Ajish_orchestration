@@ -1,0 +1,15 @@
+---
+# vars file for vmware_vnic
+
+#hostname: 192.168.202.20
+#username: A638137@devdpc.local
+#password: P@ssw0rd01ATOS123!
+#port: 443
+
+#VMNAME
+#name: I2C-W2K12R2-01
+#uuid: 4203dfcf-0786-e352-8600-8d1dedadf3e6
+
+#Port Group Name
+#port_group: '011_Infr_mgmt'
+

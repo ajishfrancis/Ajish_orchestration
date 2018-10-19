@@ -1,0 +1,32 @@
+---
+
+- include_tasks: "{{start_mail}}"
+- block:
+    - name: Assign the timezone to local system
+      copy:
+        src:  /usr/share/zoneinfo/{{timezone_required}}
+        dest: /etc/localtime
+
+    - name: Create a  symbolic link for the new timezone
+      file:
+        src:  /usr/share/zoneinfo/{{timezone_required}} 
+        dest: /etc/localtime
+        state: link
+        force: yes
+      register: result
+
+    - name: Sending the success mail
+      include_tasks: "{{success_mail}}"
+      when: result is success
+  rescue:
+   - debug: 
+       msg: "The failed task was :  {{ ansible_failed_task.name }} for the role called   {{ role_name }}  of hostname  {{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+     register: output
+
+   - name: setting the facts
+     set_fact:
+        failmsg: "{{ output }}"
+
+   - name: Task failed
+     include_tasks: "{{failure_mail}}"
+   

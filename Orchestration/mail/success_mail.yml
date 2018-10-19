@@ -1,0 +1,20 @@
+---
+   - name: Sent mail 
+     mail:
+      host: 10.72.169.25 
+      port: 25
+      from: noreply@canopy-cloud.com
+      to:
+       - Ajish Chovallur <ajish.chovallur@atos.net>
+       - Sonam Verma <sonam.verma@atos.net>
+#      cc:
+#        - Ajish Chovallur <ajish.chovallur@atos.net>
+      subject: Change-DPC{{':'}} IDM {{ hostvars[inventory_hostname]['inventory_hostname'] }} {{ role_name }} Success
+      body: |             
+            Tenant name: IDM
+            Machine name: {{ hostvars[inventory_hostname]['inventory_hostname'] }}
+     delegate_to: localhost
+
+
+
+

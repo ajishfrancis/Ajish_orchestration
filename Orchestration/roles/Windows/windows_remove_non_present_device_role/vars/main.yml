@@ -1,0 +1,3 @@
+devcon_exe_dir: Remove_non-present_devices/
+devcon_dir: C:\Devcon\
+log_path: /home/Orchestration/logs/Remove_Non_Present_Device_logs

@@ -1,0 +1,50 @@
+---
+# tasks file for WindowsPartition
+
+- include_tasks: "{{start_mail}}"
+- block:
+ 
+    - name: Get the volume size of the drives
+      win_shell: |
+         $disk = Get-WmiObject Win32_LogicalDisk -Filter "DeviceID='C:'" | Select-Object Size, FreeSpace
+         Write-Host ("{0}GB" -f [math]::truncate($disk.Size / 1GB))
+      register: volume_size
+
+
+    - name: Setting facts
+      set_fact:
+        servervolume: "{{volume_size.stdout|trim}}"
+        requiredvolume: "{{disksize_required}}"
+
+    - name: Results of comparison in Windows
+      debug: 
+         msg: "Volume Criteria Matched"
+      when: servervolume >= requiredvolume
+      register: result
+
+    - name: Sending the success mail
+      include_tasks: "{{success_mail}}"
+      when: result is success
+
+
+    - name: Setting the facts
+      set_fact:
+        failmsg: "{{ result }}"
+      when: result is skipped
+
+    - name: Task failed
+      include_tasks: "{{failure_mail}}"
+      when: result is skipped
+
+
+  rescue:
+   - debug: 
+       msg: "The failed task was :  {{ ansible_failed_task.name }} for the role called   {{ role_name }}  of hostname  {{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+     register: output
+
+   - name: setting the facts
+     set_fact:
+        failmsg: "{{ output }}"
+
+   - name: Task failed
+     include_tasks: "{{failure_mail}}"

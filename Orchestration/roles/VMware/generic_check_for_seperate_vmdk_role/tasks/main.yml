@@ -1,0 +1,16 @@
+---
+# VCenter details for All Machines
+
+    - name: Gather disk information of the  required Linux vms
+      sonam_custom_module_for_disk:
+       hostname: "{{vcenter_hostname}}"
+       username: "{{vcenter_username}}"
+       password: "{{vcenter_password}}"
+       name: "{{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+       validate_certs: no
+      delegate_to: localhost
+   
+      register: vcenter_disk_facts
+
+
+

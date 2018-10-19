@@ -1,0 +1,26 @@
+---
+
+- include_tasks: "{{start_mail}}"
+
+- block:
+
+    - name: Uninstall the NetFX from Windows
+      win_shell: |
+        Uninstall-WindowsFeature Net-Framework-Features
+      register: result
+
+    - name: Sending the success mail
+      include_tasks: "{{success_mail}}"
+      when: result is success
+
+  rescue:
+   - debug: 
+       msg: "The failed task was :  {{ ansible_failed_task.name }} for the role called   {{ role_name }}  of hostname  {{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+     register: output
+
+   - name: setting the facts
+     set_fact:
+        failmsg: "{{ output }}"
+
+   - name: Task failed
+     include_tasks: "{{failure_mail}}"

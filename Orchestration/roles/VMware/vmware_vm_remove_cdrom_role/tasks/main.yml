@@ -1,0 +1,68 @@
+---
+# this role removes the cdrom from the machine which is passed as vmname.
+
+- include_tasks: "{{start_mail}}"
+  when: hostvars[inventory_hostname]['inventory_hostname'] ==  vmname and remove_cdroms == 'yes'
+
+- block:
+
+  - name: Power off the VM
+    vmware_guest:
+      hostname: "{{vcenter_hostname}}"
+      username: "{{vcenter_username}}"
+      password: "{{vcenter_password}}"
+      name: "{{vmname}}"
+      validate_certs: no
+      state: "{{vmstate_off}}"
+    delegate_to: localhost
+    when: hostvars[inventory_hostname]['inventory_hostname'] ==  vmname and remove_cdroms == 'yes'
+
+  - name: Remove the cdroms present in the VM
+    cdromab1:
+      name: "{{ vmname }}"
+      hostname: "{{vcenter_hostname}}"
+      username: "{{vcenter_username}}"
+      password: "{{vcenter_password}}"
+      port: 443
+      datacenter: "{{ datacenter }}"
+    register: result
+    delegate_to: localhost
+    ignore_errors: true
+    when: hostvars[inventory_hostname]['inventory_hostname'] ==  vmname and remove_cdroms == 'yes'
+
+  - name: Setting the facts
+    set_fact:
+        failmsg: "{{ result }}"
+    when: result is failed
+
+  - name: Task failed
+    include_tasks: "{{failure_mail}}"
+    when: result is failed
+ 
+  - name: Start the VM
+    vmware_guest:
+      hostname: "{{vcenter_hostname}}"
+      username: "{{vcenter_username}}"
+      password: "{{vcenter_password}}"
+      name: "{{vmname}}"
+      validate_certs: no
+      state: "{{vmstate_on}}"
+    delegate_to: localhost
+    when: hostvars[inventory_hostname]['inventory_hostname'] ==  vmname and remove_cdroms == 'yes'
+
+
+  - name: Sending the success mail
+    include_tasks: "{{success_mail}}"
+    when: hostvars[inventory_hostname]['inventory_hostname'] ==  vmname and remove_cdroms == 'yes' and result is changed
+
+  rescue:
+   - debug: 
+       msg: "The failed task was :  {{ ansible_failed_task.name }} for hostname  {{ hostvars[inventory_hostname]['inventory_hostname'] }}"
+     register: output
+
+   - name: setting the facts
+     set_fact:
+        failmsg: "{{ output }}"
+
+   - name: Task failed
+     include_tasks: "{{failure_mail}}"
