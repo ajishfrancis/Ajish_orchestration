@@ -41,7 +41,6 @@
       win_file:
          path: "{{directory_remove_path}}"
          state: absent
-      when: filestat.stat.exists == True
       tags:
         - folder_removed
       
